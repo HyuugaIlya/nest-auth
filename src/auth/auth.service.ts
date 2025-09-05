@@ -7,8 +7,8 @@ import { ConflictException, Injectable, NotFoundException, UnauthorizedException
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
-import { RegisterRequest } from './dto/register.dto';
-import { LoginRequest } from './dto/login.dto';
+import { RegisterInput } from './inputs/register.input';
+import { LoginInput } from './inputs/login.input';
 import type { JWTPayload } from './interfaces/jwt.interface';
 
 import { isDev } from 'src/utils/is-dev.util';
@@ -32,8 +32,8 @@ export class AuthService {
         ].map((e) => this[e] = configService.getOrThrow<string>(e))
     }
 
-    async register(res: Response, dto: RegisterRequest) {
-        const { name, email, password } = dto
+    async register(res: Response, input: RegisterInput) {
+        const { name, email, password } = input
 
         const existingUser = await this.prismaService.user.findUnique({
             where: {
@@ -57,8 +57,8 @@ export class AuthService {
         return this.auth(res, user.id)
     }
 
-    async login(res: Response, dto: LoginRequest) {
-        const { email, password } = dto
+    async login(res: Response, input: LoginInput) {
+        const { email, password } = input
 
         const user = await this.prismaService.user.findUnique({
             where: {
@@ -153,7 +153,7 @@ export class AuthService {
             domain: this.COOKIE_DOMAIN,
             expires,
             secure: !isDev(this.configService),
-            sameSite: isDev(this.configService) ? 'none' : 'lax',
+            sameSite: 'lax',
         })
     }
 
