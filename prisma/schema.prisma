@@ -7,16 +7,13 @@ datasource db {
   url      = env("DB_URI")
 }
 
-model User {
+model Message {
   id String @id @default(uuid())
 
-  email    String @unique
-  password String
-
-  name String
+  text String
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@map("Users")
+  @@map("Messages")
 }
