@@ -7,16 +7,14 @@ datasource db {
   url      = env("DB_URI")
 }
 
-model User {
+model Artist {
   id String @id @default(uuid())
 
-  email    String @unique
-  password String
-
-  name String
+  name  String
+  genre String
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@map("Users")
+  @@map("Artists")
 }
