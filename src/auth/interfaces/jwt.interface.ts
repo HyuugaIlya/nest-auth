@@ -1,3 +1,5 @@
 export interface JWTPayload {
-    id: string;
+    id: string
+    email: string
+    name: string
 }

@@ -9,9 +9,10 @@ import { JwtService } from '@nestjs/jwt';
 
 import { RegisterRequest } from './dto/register.dto';
 import { LoginRequest } from './dto/login.dto';
-import type { JWTPayload } from './interfaces/jwt.interface';
 
-import { isDev } from 'src/utils/is-dev.util';
+import { isDev } from '../utils/is-dev.util';
+import type { AuthSignDto } from './dto/auth.dto';
+import { JWTPayload } from './interfaces/jwt.interface';
 
 @Injectable()
 export class AuthService {
@@ -54,7 +55,7 @@ export class AuthService {
             },
         })
 
-        return this.auth(res, user.id)
+        return this.auth(res, { id: user.id, email: user.email, name: user.name })
     }
 
     async login(res: Response, dto: LoginRequest) {
@@ -66,6 +67,8 @@ export class AuthService {
             },
             select: {
                 id: true,
+                email: true,
+                name: true,
                 password: true,
             }
         })
@@ -78,7 +81,7 @@ export class AuthService {
             throw new NotFoundException('Пользователь не найден')
         }
 
-        return this.auth(res, user.id)
+        return this.auth(res, { id: user.id, email: user.email, name: user.name })
     }
 
     async refresh(req: Request, res: Response) {
@@ -99,7 +102,9 @@ export class AuthService {
                 id: payload.id
             },
             select: {
-                id: true
+                id: true,
+                email: true,
+                name: true,
             }
         })
 
@@ -107,7 +112,7 @@ export class AuthService {
             throw new NotFoundException('Пользователь не найден')
         }
 
-        return this.auth(res, user.id)
+        return this.auth(res, { id: user.id, email: user.email, name: user.name })
     }
 
     async logout(res: Response) {
@@ -130,14 +135,22 @@ export class AuthService {
         return user
     }
 
-    private generateTokes(id: string) {
-        const payload: JWTPayload = { id }
+    async validateToken(token: string) {
+        const user: JWTPayload = await this.jwtService.verifyAsync(token)
 
-        const accessToken = this.jwtService.sign(payload, {
+        if (!user) {
+            throw new UnauthorizedException('Невалидный access-token')
+        }
+
+        return user
+    }
+
+    private generateTokes(dto: AuthSignDto) {
+        const accessToken = this.jwtService.sign(dto, {
             expiresIn: this.JWT_ACCESS_TOKEN_TTL
         })
 
-        const refreshToken = this.jwtService.sign(payload, {
+        const refreshToken = this.jwtService.sign(dto, {
             expiresIn: this.JWT_REFRESH_TOKEN_TTL
         })
 
@@ -157,8 +170,8 @@ export class AuthService {
         })
     }
 
-    private auth(res: Response, id: string) {
-        const { accessToken, refreshToken } = this.generateTokes(id)
+    private auth(res: Response, dto: AuthSignDto) {
+        const { accessToken, refreshToken } = this.generateTokes(dto)
 
         this.setRefreshTokenCookie(res, refreshToken, new Date(Date.now() + 1000 * 60 * 60 * 24 * 7))
 
